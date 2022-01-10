@@ -7,11 +7,29 @@
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": 13,
-    "sourceType": "module"
+    "sourceType": "module",
+    "project": "./tsconfig.json"
   },
   "plugins": ["@typescript-eslint"],
   "rules": {
+    "comma-dangle": "off",
     "no-console": "off",
-    "@typescript-eslint/no-explicit-any": "warn"
-  }
+    "no-unused-vars": "off",
+    "arrow-body-style": "off",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "import/extensions": [
+      "error",
+      "ignorePackages",
+      { "ts": "never" }
+    ]
+  },
+  "settings": {
+    "import/extensions": [".ts"],
+    "import/resolver": {
+      "node": {
+        "extensions": [".ts"]
+      }
+    }
+  },
+  "ignorePatterns": ["**/dist/*"]
 }

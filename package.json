@@ -9,9 +9,15 @@
     "start": "tsc && node dist/index.js"
   },
   "dependencies": {
-    "express": "^4.17.2"
+    "@google-cloud/dialogflow": "^4.6.0",
+    "date-fns": "^2.28.0",
+    "dialogflow-fulfillment": "^0.6.1",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.2",
+    "mongodb": "^4.3.0"
   },
   "devDependencies": {
+    "@types/dialogflow-fulfillment": "^0.6.1",
     "@types/express": "^4.17.13",
     "@typescript-eslint/eslint-plugin": "^5.9.0",
     "@typescript-eslint/parser": "^5.9.0",
