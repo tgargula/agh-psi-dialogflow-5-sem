@@ -18,8 +18,8 @@ const parseToEvent = (document: WithId<Document>): Meeting => ({
 
 const meetingRepository = {
   isFree: async (datetime: Date, duration: number = 30): Promise<boolean> => {
-    const end = addMinutes(datetime, duration).toISOString();
-    const date = datetime.toISOString();
+    const end = addMinutes(datetime, duration);
+    const date = datetime;
     const cursor = getDb()
       .collection('meeting')
       .find({

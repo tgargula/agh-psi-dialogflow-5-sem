@@ -1,7 +1,8 @@
-import { WithId, Document } from 'mongodb';
+import { WithId, Document, ObjectId } from 'mongodb';
 import { getDb } from '../database';
 
 type Event = {
+  id: ObjectId;
   title: string;
   description: string;
   date: Date;
@@ -9,9 +10,11 @@ type Event = {
 };
 
 const parseToEvent = (document: WithId<Document>): Event => ({
+  // eslint-disable-next-line no-underscore-dangle
+  id: document._id,
   title: document.title,
   description: document.description,
-  date: document.date,
+  date: new Date(document.date),
   durationInMinutes: document.durationInMinutes,
 });
 

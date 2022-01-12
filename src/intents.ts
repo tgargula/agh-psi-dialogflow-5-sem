@@ -1,11 +1,17 @@
 import { WebhookClient } from 'dialogflow-fulfillment';
-import { addMinutes, format } from 'date-fns';
+import { addMinutes, format, setHours } from 'date-fns';
 import meetingRepository from './repositories/meeting';
 import eventRepository from './repositories/event';
+import enrollmentRepository from './repositories/enrollment';
 
 type MeetingParams = {
   date: string;
   time: string;
+};
+
+type EnrollmentParams = {
+  person: { name: string };
+  email: string;
 };
 
 const meeting = async (
@@ -13,7 +19,7 @@ const meeting = async (
   agent: WebhookClient,
   { date, time }: MeetingParams
 ) => {
-  const datetime = new Date(date);
+  const datetime = setHours(new Date(date), new Date(time).getHours());
   const endDate = addMinutes(datetime, 30);
 
   intentMap.set('Spotkanie', async () => {
@@ -44,7 +50,7 @@ const events = async (
 ) => {
   const results = await eventRepository.findIncoming();
 
-  intentMap.set('Wydarzenie', async () => {
+  intentMap.set('Wydarzenie', () => {
     if (!results.length) {
       agent.add(
         'Niestety nie ma nadchodzących wydarzeń w kalendarzu. Zapraszamy jednak do udziału w zajęciach prowadzonych przez studentów'
@@ -53,12 +59,11 @@ const events = async (
     }
 
     const [{ title, date }] = results;
-    agent.add(
-      `Najbliższe wydarzenie to: ${title}. Odbędzie się ono: ${format(
-        date,
-        'yyyy-MM-dd'
-      )} o godzinie ${format(date, 'H:mm')}`
-    );
+    agent.contexts.push({
+      name: 'Wydarzenie-followup',
+      lifespan: 3,
+      parameters: { title },
+    });
 
     if (results.length > 1) {
       const [, nextEvent] = results;
@@ -68,7 +73,40 @@ const events = async (
           'yyyy-MM-dd'
         )} o godzinie ${format(date, 'H:mm')}. Następne wydarzenie to: ${
           nextEvent.title
-        }, który jest zaplanowany na ${format(nextEvent.date, 'yyyy-MM-dd')}`
+        }, który jest zaplanowany na ${format(
+          nextEvent.date,
+          'yyyy-MM-dd'
+        )}. Czy chciał(a)byś się zapisać na ${title}?`
+      );
+      return;
+    }
+
+    agent.add(
+      `Najbliższe wydarzenie to: ${title}. Odbędzie się ono: ${format(
+        date,
+        'yyyy-MM-dd'
+      )} o godzinie ${format(
+        date,
+        'H:mm'
+      )} Czy chciał(a)byś się zapisać na ${title}?`
+    );
+  });
+};
+
+const enrollment = async (
+  intentMap: Map<string, () => void>,
+  agent: WebhookClient,
+  { person, email }: EnrollmentParams
+) => {
+  const name = person?.name;
+
+  intentMap.set('Wydarzenie-yes', async () => {
+    const result = await eventRepository.findIncoming();
+    if (result?.length) {
+      const [{ id: eventId, title }] = result;
+      await enrollmentRepository.enrollToNextEvent(eventId, name, email);
+      agent.add(
+        `Potwierdzam zapis: ${name} <${email}> na wydarzenie: ${title}. Dziękujemy za skorzystanie z bota BIT-u do zapisu na wydarzenie! Do zobaczenia wkrótce!`
       );
     }
   });
@@ -79,6 +117,7 @@ const getIntentMap = async (agent: WebhookClient, req: any) => {
 
   await meeting(intentMap, agent, req.body.queryResult.parameters);
   await events(intentMap, agent);
+  await enrollment(intentMap, agent, req.body.queryResult.parameters);
 
   return intentMap;
 };

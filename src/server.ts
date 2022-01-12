@@ -15,7 +15,9 @@ const server = async () => {
 
   app.post('/dialogflow', async (req, res) => {
     const agent = new WebhookClient({ request: req, response: res });
+    console.debug(0);
     const intentMap = await getIntentMap(agent, req);
+    console.debug(intentMap);
     agent.handleRequest(intentMap);
   });
 
